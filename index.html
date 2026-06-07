@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splynx ISP Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:#f4f5f7; color:#222; display:flex; height:100vh; overflow:hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width:185px; background:#2d2d6b; color:#c5c7e8; display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
+  .sidebar-logo { padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:8px; }
+  .sidebar-logo img { height:28px; }
+  .sidebar-logo span { color:#fff; font-weight:700; font-size:18px; letter-spacing:1px; }
+  .sidebar-logo .beta { background:#7c3aed; color:#fff; font-size:9px; padding:1px 5px; border-radius:3px; margin-left:2px; }
+
+  .nav-section-label { font-size:10px; font-weight:600; letter-spacing:1.2px; color:#8b8fc4; padding:14px 16px 4px; text-transform:uppercase; }
+  .nav-item { display:flex; align-items:center; gap:8px; padding:8px 16px; cursor:pointer; font-size:13px; color:#c5c7e8; border-left:3px solid transparent; transition:all 0.15s; position:relative; }
+  .nav-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
+  .nav-item.active { background:rgba(255,255,255,0.13); color:#fff; border-left-color:#7c6ff7; }
+  .nav-item .icon { width:16px; text-align:center; font-size:14px; }
+  .nav-item .arrow { margin-left:auto; font-size:10px; transition:transform 0.2s; }
+  .nav-item.expanded .arrow { transform:rotate(180deg); }
+  .subnav { background:rgba(0,0,0,0.15); }
+  .subnav .nav-item { padding-left:36px; font-size:12.5px; }
+  .subnav .nav-item.active { background:rgba(255,255,255,0.1); border-left-color:#7c6ff7; font-weight:600; color:#fff; }
+
+  /* MAIN */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+  /* TOPBAR */
+  .topbar { background:#fff; border-bottom:1px solid #e5e7eb; padding:0 20px; height:48px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .topbar-left { display:flex; align-items:center; gap:12px; }
+  .topbar-right { display:flex; align-items:center; gap:14px; color:#555; font-size:13px; }
+  .topbar-right .admin { background:#6366f1; color:#fff; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+  .deploy-btn { background:#6366f1; color:#fff; border:none; padding:6px 16px; border-radius:6px; font-size:12.5px; font-weight:600; cursor:pointer; }
+
+  /* PAGE CONTENT */
+  .content { flex:1; overflow-y:auto; padding:20px; }
+
+  /* PAGE HEADER */
+  .page-header { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
+  .page-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .page-icon.purple { background:#7c3aed; }
+  .page-icon.teal { background:#0d9488; }
+  .page-icon.blue { background:#2563eb; }
+  .page-icon.green { background:#059669; }
+  .page-title h1 { font-size:20px; font-weight:700; color:#1a1a2e; }
+  .breadcrumb { font-size:12px; color:#6b7280; }
+  .breadcrumb a { color:#6366f1; cursor:pointer; }
+
+  /* TABS */
+  .tabs { display:flex; gap:0; border-bottom:2px solid #e5e7eb; margin-bottom:20px; }
+  .tab { padding:9px 18px; font-size:13px; font-weight:500; color:#6b7280; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s; }
+  .tab:hover { color:#6366f1; }
+  .tab.active { color:#6366f1; border-bottom-color:#6366f1; font-weight:600; }
+
+  /* CARDS/PANELS */
+  .panel { background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:20px; margin-bottom:16px; }
+  .panel-title { font-size:15px; font-weight:700; color:#1a1a2e; margin-bottom:16px; }
+
+  /* FORM */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+  .form-row { display:flex; align-items:center; border-bottom:1px solid #f3f4f6; padding:10px 0; }
+  .form-row:last-child { border-bottom:none; }
+  .form-label { width:200px; font-size:13px; color:#6b7280; text-align:right; padding-right:20px; flex-shrink:0; }
+  .form-control { flex:1; display:flex; align-items:center; gap:6px; }
+  .form-control input, .form-control select { width:100%; border:1px solid #d1d5db; border-radius:6px; padding:7px 10px; font-size:13px; color:#374151; outline:none; font-family:inherit; background:#fff; }
+  .form-control input:focus, .form-control select:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+  .form-control .icon-btn { width:32px; height:32px; border:1px solid #d1d5db; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; background:#f9fafb; color:#6b7280; flex-shrink:0; }
+
+  /* BUTTONS */
+  .btn { padding:7px 18px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all 0.15s; }
+  .btn-primary { background:#6366f1; color:#fff; }
+  .btn-primary:hover { background:#4f46e5; }
+  .btn-secondary { background:#fff; color:#374151; border:1px solid #d1d5db; }
+  .btn-secondary:hover { background:#f9fafb; }
+  .btn-sm { padding:5px 12px; font-size:12px; }
+  .btn-success { background:#059669; color:#fff; }
+
+  /* TABLE */
+  .table-toolbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+  .table-toolbar-left { display:flex; align-items:center; gap:10px; }
+  .table-toolbar-right { display:flex; align-items:center; gap:8px; }
+  .search-box { border:1px solid #d1d5db; border-radius:6px; padding:6px 12px; font-size:13px; outline:none; width:200px; font-family:inherit; }
+  .search-box:focus { border-color:#6366f1; }
+  select.entries-select { border:1px solid #d1d5db; border-radius:6px; padding:5px 8px; font-size:13px; font-family:inherit; }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:10px 12px; font-weight:600; color:#6b7280; background:#f9fafb; border-bottom:2px solid #e5e7eb; white-space:nowrap; }
+  td { padding:10px 12px; border-bottom:1px solid #f3f4f6; color:#374151; }
+  tr:hover td { background:#fafafa; }
+  tr.online td { background:#f0fdf4; }
+  tr.online24 td { background:#fffbeb; }
+  tr.new-status td { background:#eff6ff; }
+  .link { color:#6366f1; cursor:pointer; font-weight:500; }
+  .link:hover { text-decoration:underline; }
+
+  /* BADGES */
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .badge-online { background:#dcfce7; color:#15803d; }
+  .badge-online24 { background:#fef3c7; color:#92400e; }
+  .badge-new { background:#dbeafe; color:#1d4ed8; }
+  .badge-blocked { background:#fee2e2; color:#dc2626; }
+  .badge-active { background:#dcfce7; color:#15803d; }
+  .badge-qualification { background:#c7d2fe; color:#4338ca; }
+  .badge-activation { background:#fed7aa; color:#c2410c; }
+  .badge-lost { background:#fee2e2; color:#dc2626; }
+  .badge-instock { background:#dbeafe; color:#1d4ed8; }
+  .badge-norule { background:#f3f4f6; color:#374151; border:1px solid #d1d5db; }
+
+  /* STATS ROW */
+  .stats-row { display:flex; gap:24px; margin-bottom:16px; }
+  .stat-item { display:flex; flex-direction:column; }
+  .stat-label { font-size:11px; color:#9ca3af; font-weight:500; }
+  .stat-value { font-size:18px; font-weight:700; color:#1a1a2e; }
+
+  /* ACCOUNT BAR */
+  .account-bar { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .account-bar-left { font-size:13px; font-weight:600; color:#374151; }
+  .account-bar-right { display:flex; gap:10px; }
+
+  /* TWO COLUMN LAYOUT */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+  /* USAGE TABLE */
+  .usage-table td:first-child { color:#6b7280; width:140px; }
+  .usage-table td:last-child { font-weight:600; }
+
+  /* CHART BAR */
+  .chart-area { background:#f9fafb; border-radius:8px; padding:16px; min-height:140px; display:flex; align-items:flex-end; gap:8px; margin-top:10px; }
+  .chart-bar-group { display:flex; gap:2px; align-items:flex-end; }
+  .chart-bar { width:22px; border-radius:3px 3px 0 0; }
+
+  /* TARIFF TABLE */
+  .plan-adsl { color:#6366f1; }
+  .plan-wifi { color:#0d9488; }
+  .plan-wdsl { color:#7c3aed; }
+  .plan-fiber { color:#2563eb; }
+
+  /* PAGINATION */
+  .pagination { display:flex; align-items:center; justify-content:space-between; margin-top:14px; font-size:12px; color:#6b7280; }
+  .pagination-btns { display:flex; gap:4px; }
+  .page-btn { width:28px; height:28px; border:1px solid #d1d5db; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; background:#fff; }
+  .page-btn.active { background:#6366f1; color:#fff; border-color:#6366f1; }
+  .page-btn:hover:not(.active) { background:#f3f4f6; }
+
+  /* HIDDEN VIEWS */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* TOGGLE */
+  .toggle { width:36px; height:20px; background:#6366f1; border-radius:10px; position:relative; cursor:pointer; flex-shrink:0; }
+  .toggle::after { content:''; width:16px; height:16px; background:#fff; border-radius:50%; position:absolute; top:2px; right:2px; transition:right 0.2s; }
+  .toggle.off { background:#d1d5db; }
+  .toggle.off::after { right:18px; }
+
+  /* BILLING SUMMARY */
+  .billing-meta { display:flex; gap:30px; margin-bottom:16px; }
+  .billing-meta-item { font-size:12px; }
+  .billing-meta-item .label { color:#9ca3af; }
+  .billing-meta-item .value { font-weight:700; font-size:15px; color:#1a1a2e; margin-top:2px; }
+
+  /* INVENTORY FILTERS */
+  .filter-bar { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-input { border:1px solid #d1d5db; border-radius:6px; padding:6px 10px; font-size:12.5px; font-family:inherit; outline:none; }
+  .filter-btn { border:1px solid #d1d5db; background:#fff; border-radius:6px; padding:6px 14px; font-size:12.5px; cursor:pointer; font-family:inherit; }
+
+  /* PRODUCT DETAIL */
+  .product-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .info-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f3f4f6; font-size:13px; }
+  .info-row .key { color:#6b7280; }
+  .info-row .val { font-weight:600; }
+
+  /* TOPNAV ACTIONS */
+  .topnav-actions { display:flex; gap:8px; margin-left:auto; }
+
+  .no-data { text-align:center; padding:40px; color:#9ca3af; font-size:13px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:#f1f1f1; }
+  ::-webkit-scrollbar-thumb { background:#c5c7e8; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <span>SPLYNX<sup class="beta">BETA</sup></span>
+  </div>
+
+  <div class="nav-item" onclick="navigate('dashboard')">
+    <span class="icon">⊞</span> Dashboard
+  </div>
+
+  <div class="nav-section-label">CRM</div>
+
+  <div class="nav-item expanded active" onclick="toggleNav(this,'crm-sub')">
+    <span class="icon">👤</span> Customers <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="crm-sub">
+    <div class="nav-item active" onclick="navigate('add-customer')">Add</div>
+    <div class="nav-item" onclick="navigate('customers-list')">Search</div>
+    <div class="nav-item" onclick="navigate('customers-list')">List</div>
+    <div class="nav-item" onclick="toggleNav(this,'vouchers-sub')">Vouchers <span class="arrow">▾</span></div>
+    <div class="subnav" id="vouchers-sub" style="display:none">
+      <div class="nav-item" style="padding-left:52px">List</div>
+    </div>
+    <div class="nav-item">Maps</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'leads-sub')">
+    <span class="icon">🔷</span> Leads <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="leads-sub" style="display:none">
+    <div class="nav-item" onclick="navigate('leads-list')">Dashboard</div>
+    <div class="nav-item" onclick="navigate('add-lead')">Add lead</div>
+    <div class="nav-item" onclick="navigate('leads-list')">List</div>
+    <div class="nav-item">Quotes</div>
+    <div class="nav-item">Maps</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'tickets-sub')">
+    <span class="icon">🔹</span> Tickets <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="tickets-sub" style="display:none">
+    <div class="nav-item" onclick="navigate('tickets-list')">List</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'finance-sub')">
+    <span class="icon">💬</span> Finance <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="finance-sub" style="display:none">
+    <div class="nav-item">Dashboard</div>
+    <div class="nav-item">Transactions</div>
+    <div class="nav-item" onclick="navigate('finance-list')">Invoices</div>
+    <div class="nav-item">Credit notes</div>
+    <div class="nav-item">Proforma invoices</div>
+    <div class="nav-item">Payments</div>
+    <div class="nav-item">History &amp; Preview</div>
+    <div class="nav-item">Payment statements <span class="arrow">▾</span></div>
+    <div class="nav-item">Refill cards <span class="arrow">▾</span></div>
+    <div class="nav-item">Costs</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'messages-sub')">
+    <span class="icon">✉️</span> Messages <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="messages-sub" style="display:none">
+    <div class="nav-item">Inbox</div>
+    <div class="nav-item">Sent</div>
+  </div>
+
+  <div class="nav-section-label">COMPANY</div>
+
+  <div class="nav-item" onclick="toggleNav(this,'networking-sub')">
+    <span class="icon">🌐</span> Networking <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="networking-sub" style="display:none">
+    <div class="nav-item">Network sites</div>
+    <div class="nav-item">Routers <span class="arrow">▾</span></div>
+    <div class="nav-item">TR-069 (ACS) <span class="arrow">▾</span></div>
+    <div class="nav-item">Hardware <span class="arrow">▾</span></div>
+    <div class="nav-item">IPv4 networks <span class="arrow">▾</span></div>
+    <div class="nav-item">IPv6 networks <span class="arrow">▾</span></div>
+    <div class="nav-item">Maps</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'sched-sub')">
+    <span class="icon">📅</span> Scheduling <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="sched-sub" style="display:none">
+    <div class="nav-item">Calendar</div>
+    <div class="nav-item">Tasks</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'inv-sub')">
+    <span class="icon">📦</span> Inventory <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="inv-sub" style="display:none">
+    <div class="nav-item" onclick="navigate('inventory-items')">Dashboard</div>
+    <div class="nav-item" onclick="navigate('inventory-items')">Items</div>
+    <div class="nav-item" onclick="navigate('inventory-product')">Products</div>
+    <div class="nav-item">Supply <span class="arrow">▾</span></div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'voice-sub')">
+    <span class="icon">🎙️</span> Voice <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="voice-sub" style="display:none">
+    <div class="nav-item">CDRs</div>
+    <div class="nav-item">Plans</div>
+  </div>
+
+  <div class="nav-item" onclick="toggleNav(this,'tariff-sub')">
+    <span class="icon">⊕</span> Tariff plans <span class="arrow">▾</span>
+  </div>
+  <div class="subnav" id="tariff-sub" style="display:none">
+    <div class="nav-item" onclick="navigate('tariff-plans')">Internet</div>
+    <div class="nav-item">Voice</div>
+    <div class="nav-item">Recurring</div>
+    <div class="nav-item">One-time</div>
+    <div class="nav-item">Bundles</div>
+  </div>
+
+  <div class="nav-section-label">SYSTEM</div>
+  <div class="nav-item"><span class="icon">⚙️</span> Administration</div>
+  <div class="nav-item"><span class="icon">🔧</span> Config</div>
+</div>
+
+<!-- MAIN AREA -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="deploy-btn">Deployment guide</button>
+    </div>
+    <div class="topbar-right">
+      <span>➕</span><span>🔍</span><span>❓</span><span>📋</span><span>🔔</span>
+      <span class="admin">MA Main Admin ▾</span>
+    </div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div class="content">
+
+    <!-- ===== ADD CUSTOMER ===== -->
+    <div class="view active" id="view-add-customer">
+      <div class="page-header">
+        <div class="page-icon purple">👤</div>
+        <div class="page-title"><h1>Add</h1></div>
+      </div>
+      <div class="panel">
+        <div class="form-row"><div class="form-label">Portal login</div><div class="form-control"><input type="text" placeholder=""><span class="icon-btn">🔑</span></div></div>
+        <div class="form-row"><div class="form-label">Portal password</div><div class="form-control"><input type="password" placeholder=""><span class="icon-btn">🔄</span></div></div>
+        <div class="form-row"><div class="form-label">Billing type</div><div class="form-control"><select><option>Recurring</option><option>Prepaid</option></select></div></div>
+        <div class="form-row"><div class="form-label">Category</div><div class="form-control"><select><option>Individual</option><option>Business</option></select></div></div>
+        <div class="form-row"><div class="form-label">Full name</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">Email</div><div class="form-control"><input type="email" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">Billing email</div><div class="form-control"><input type="email" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">Phone number</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">Date of birth</div><div class="form-control"><input type="date"></div></div>
+        <div class="form-row"><div class="form-label">Identification</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">Partner</div><div class="form-control"><select><option>Demo company</option></select></div></div>
+        <div class="form-row"><div class="form-label">Location</div><div class="form-control"><select><option>Praha 5 - Barrandov</option><option>Praha 5 - Stodulky</option></select></div></div>
+        <div class="form-row"><div class="form-label">Date added</div><div class="form-control"><input type="date" value="2026-06-07"></div></div>
+        <div class="form-row"><div class="form-label">Street</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">ZIP Code</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">City</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div class="form-row"><div class="form-label">State/Province</div><div class="form-control"><select><option>Select state/province</option></select></div></div>
+        <div class="form-row"><div class="form-label">Geo data</div><div class="form-control"><input type="text" style="background:#f9fafb" readonly><span class="icon-btn">🗺️</span></div></div>
+        <div class="form-row"><div class="form-label">Contract ID</div><div class="form-control"><input type="text" placeholder=""></div></div>
+        <div style="text-align:right;margin-top:16px;">
+          <button class="btn btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMERS LIST ===== -->
+    <div class="view" id="view-customers-list">
+      <div class="page-header">
+        <div class="page-icon purple">👤</div>
+        <div class="page-title"><h1>List</h1><div class="breadcrumb">Customers / List</div></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:14px;">
+        <button class="btn btn-secondary btn-sm" style="font-weight:700;border-bottom:2px solid #6366f1;color:#6366f1">All customers</button>
+        <button class="btn btn-secondary btn-sm">Online customers</button>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="padding:12px 16px;" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <span style="font-size:13px;color:#6b7280">Show</span>
+            <select class="entries-select"><option>100</option><option>50</option><option>25</option></select>
+            <span style="font-size:13px;color:#6b7280">entries</span>
+          </div>
+          <div class="table-toolbar-right">
+            <input class="search-box" placeholder="Search" type="text">
+            <button class="btn btn-secondary btn-sm">⊡</button>
+            <button class="btn btn-secondary btn-sm">···</button>
+            <button class="btn btn-secondary btn-sm">→</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox"></th>
+              <th>Status ⇅</th><th>ID ⇅</th><th>Portal login ⇅</th><th>Full name ⇅</th><th>Phone number ⇅</th><th>Internet plans ⇅</th><th>IPs ⇅</th><th>Custom status ⇅</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="online" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online">Online</span></td><td><span class="link" onclick="navigate('customer-detail')">1</span></td><td><span class="link">000001</span></td><td><span class="link" onclick="navigate('customer-detail')">Clark Willis</span></td><td></td><td><span class="link plan-adsl">ADSL 2MB/1MB</span></td><td></td><td>new</td></tr>
+            <tr class="online" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online">Online</span></td><td><span class="link">7</span></td><td><span class="link">000007</span></td><td><span class="link">Lora Fletcher</span></td><td></td><td><span class="link plan-wifi">WIFI 10MB/5MB</span></td><td>10.0.20.55</td><td>customer</td></tr>
+            <tr class="online" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online">Online</span></td><td><span class="link">8</span></td><td><span class="link">000008</span></td><td><span class="link">Ollie Hines</span></td><td></td><td><span class="link plan-wdsl">WDSL 10 Mbps</span></td><td></td><td>customer</td></tr>
+            <tr class="online" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online">Online</span></td><td><span class="link">10</span></td><td><span class="link">000010</span></td><td><span class="link">Kelley Kim</span></td><td></td><td><span class="link plan-fiber">FIBER 100 Mbps</span></td><td></td><td>customer</td></tr>
+            <tr class="online24" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online24">Online last 24 hours</span></td><td><span class="link">3</span></td><td><span class="link">000003</span></td><td><span class="link" onclick="navigate('customer-detail')">Nelson Jackson</span></td><td></td><td><span class="link plan-adsl">ADSL 5MB/2.5MB</span></td><td></td><td>customer</td></tr>
+            <tr class="online24" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online24">Online last 24 hours</span></td><td><span class="link">5</span></td><td><span class="link">000005</span></td><td><span class="link">Lucy Murphy</span></td><td></td><td><span class="link plan-wifi">WIFI 10MB/5MB</span></td><td>10.0.20.33</td><td>customer</td></tr>
+            <tr class="online24" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online24">Online last 24 hours</span></td><td><span class="link">6</span></td><td><span class="link">000006</span></td><td><span class="link">Bert Brady</span></td><td></td><td><span class="link plan-wifi">WIFI 2MB/1MB</span></td><td>10.0.20.41</td><td>customer</td></tr>
+            <tr class="online24" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-online24">Online last 24 hours</span></td><td><span class="link">9</span></td><td><span class="link">000009</span></td><td><span class="link">Glen Salazar</span></td><td></td><td><span class="link plan-wdsl">WDSL 40 Mbps</span></td><td></td><td>customer</td></tr>
+            <tr class="new-status" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-new">New</span></td><td><span class="link">14</span></td><td><span class="link">000014</span></td><td><span class="link">Darrell Evans</span></td><td></td><td></td><td></td><td>customer</td></tr>
+            <tr class="new-status" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-new">New</span></td><td><span class="link">15</span></td><td><span class="link">000015</span></td><td><span class="link">Lorene Carroll</span></td><td></td><td></td><td></td><td>customer</td></tr>
+            <tr class="new-status" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-new">New</span></td><td><span class="link">16</span></td><td><span class="link">000016</span></td><td><span class="link">Ignacio Schwartz</span></td><td></td><td></td><td></td><td>customer</td></tr>
+            <tr class="new-status" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-new">New</span></td><td><span class="link">17</span></td><td><span class="link">000017</span></td><td><span class="link">Hazel Welch</span></td><td></td><td></td><td></td><td>customer</td></tr>
+            <tr class="new-status" style="cursor:pointer" onclick="navigate('customer-detail')"><td><input type="checkbox" onclick="event.stopPropagation()"></td><td><span class="badge badge-new">New</span></td><td><span class="link">20</span></td><td><span class="link">000020</span></td><td><span class="link">Faith Dawson</span></td><td></td><td></td><td></td><td>customer</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" style="padding:12px 16px;">
+          <span>Showing 1 to 13 of 25 entries</span>
+          <div class="pagination-btns">
+            <div class="page-btn">«</div><div class="page-btn">‹</div>
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">›</div><div class="page-btn">»</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CUSTOMER DETAIL ===== -->
+    <div class="view" id="view-customer-detail">
+      <div class="page-header">
+        <div class="page-icon purple">👤</div>
+        <div class="page-title">
+          <div class="breadcrumb"><a onclick="navigate('customers-list')">Customers</a> / <a onclick="navigate('customers-list')">List</a> /</div>
+          <h1 id="cust-detail-title">Kelley Kim (000010 - 10)</h1>
+        </div>
+        <div class="topnav-actions">
+          <button class="btn btn-secondary btn-sm">Actions ▾</button>
+          <button class="btn btn-secondary btn-sm">Tasks ▾</button>
+          <button class="btn btn-secondary btn-sm">Tickets <span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:2px">1</span> ▾</button>
+          <button class="btn btn-primary btn-sm">Save</button>
+          <button class="btn btn-secondary btn-sm" style="padding:5px 8px">‹</button>
+          <button class="btn btn-secondary btn-sm" style="padding:5px 8px">›</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="customer-tabs">
+        <div class="tab active" onclick="showTab('info')">Information</div>
+        <div class="tab" onclick="showTab('services')">Services</div>
+        <div class="tab" onclick="showTab('billing')">Billing</div>
+        <div class="tab" onclick="showTab('statistics')">Statistics</div>
+        <div class="tab" onclick="showTab('documents')">Documents</div>
+        <div class="tab" onclick="showTab('lead')">Lead</div>
+        <div class="tab" onclick="showTab('communication')">Communication</div>
+      </div>
+
+      <!-- ===== INFO TAB ===== -->
+      <div id="tab-info">
+        <div class="account-bar">
+          <div class="account-bar-left">Kelley Kim (000010) &nbsp; Account balance: <strong>0.00 $</strong></div>
+          <div class="account-bar-right">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <button class="btn btn-secondary btn-sm">Tasks ▾</button>
+            <button class="btn btn-secondary btn-sm">Tickets <span style="background:#ef4444;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:2px">1</span> ▾</button>
+            <button class="btn btn-primary btn-sm">Save</button>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">Main information</div>
+            <div class="form-row"><div class="form-label" style="width:160px">ID</div><div class="form-control"><span style="font-weight:600">10</span></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Portal login</div><div class="form-control"><input type="text" value="000010"></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Portal password</div><div class="form-control"><button class="btn btn-secondary btn-sm">Show</button></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Status</div><div class="form-control"><select><option>Active</option><option>Blocked</option><option>Inactive</option></select><span style="margin-left:6px;cursor:pointer;color:#6b7280">📅</span></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Billing type</div><div class="form-control"><select><option>Recurring</option></select></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Full name</div><div class="form-control"><input type="text" value="Kelley Kim"></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Email</div><div class="form-control"><input type="email" value="kelley.kim@ispframework.com"><span class="icon-btn">✉️</span></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Billing email</div><div class="form-control"><input type="email" value="kelley.kim@ispframework.com"><span class="icon-btn">✉️</span></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Phone number</div><div class="form-control"><input type="text" value=""><span class="icon-btn">📞</span></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Partner</div><div class="form-control"><select><option>Demo reseller</option><option>Demo company</option></select></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Location</div><div class="form-control"><select><option>Praha 5 - Barrandov</option><option>Praha 5 - Stodulky</option></select></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Street</div><div class="form-control"><input type="text" value="Voskovcova 1075/43"></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">ZIP Code</div><div class="form-control"><input type="text" value="15200"></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">City</div><div class="form-control"><input type="text" value="Praha 5"></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">State/Province</div><div class="form-control"><select><option>Select state/province</option></select></div></div>
+            <div class="form-row"><div class="form-label" style="width:160px">Geo data</div><div class="form-control"><input type="text" style="background:#f9fafb" readonly><span class="icon-btn">🗺️</span></div></div>
+          </div>
+          <div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-title">Comments / To-Dos <span style="float:right;cursor:pointer;color:#6366f1;font-size:18px">＋</span></div>
+              <div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px 0">No comments.</div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Additional information <span style="float:right;cursor:pointer;color:#6b7280">▲</span></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Labels ℹ️</div><div class="form-control"><input placeholder="Start typing label name"></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Category</div><div class="form-control"><select><option>Individual</option><option>Business</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Date of birth</div><div class="form-control"><input type="date"></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Identification</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Contract ID</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Custom status</div><div class="form-control"><select><option>customer</option><option>new</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Bank account</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Management Ip</div><div class="form-control"><select style="flex:1"><option>Choose option:</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Connected by</div><div class="form-control"><select><option>Choose option:</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Date of ending contract</div><div class="form-control"><input type="date"><span class="icon-btn" style="margin-left:4px">✕</span></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Use own router</div><div class="form-control"><div class="toggle off"></div></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:8px"><button class="btn btn-primary">Save</button></div>
+      </div>
+
+      <!-- ===== SERVICES TAB ===== -->
+      <div id="tab-services" style="display:none">
+
+        <!-- ===== ASSIGN INTERNET PLAN FORM ===== -->
+        <div class="panel" style="margin-bottom:16px;border:2px solid #e0e7ff;background:#fafbff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">🌐</div>
+              <div>
+                <div class="panel-title" style="margin:0">Assign Internet Plan</div>
+                <div style="font-size:11.5px;color:#9ca3af;margin-top:2px">Select a plan from the list below to assign to this customer</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;font-weight:600;color:#059669;background:#dcfce7;padding:4px 12px;border-radius:20px">● Currently Assigned: <span id="current-plan-badge">FIBER 100 Mbps</span></span>
+            </div>
+          </div>
+
+          <!-- Plan Selector -->
+          <div class="form-row" style="border:none;padding:0;margin-bottom:14px">
+            <div class="form-label" style="width:180px;text-align:right;padding-right:16px;font-weight:600;color:#374151">Internet Plan</div>
+            <div class="form-control" style="gap:10px">
+              <select id="svc-plan-select" onchange="onPlanSelect(this.value)" style="flex:1;font-size:13px;border:1.5px solid #6366f1;border-radius:7px;padding:8px 12px;color:#374151;font-family:inherit">
+                <optgroup label="── ADSL ──">
+                  <option value="ADSL 1MB/0.5MB"  data-price="100"  data-dl="1000"   data-ul="500"   data-type="adsl">ADSL 1MB/0.5MB — 100.00 $</option>
+                  <option value="ADSL 2MB/1MB"    data-price="200"  data-dl="2000"   data-ul="1000"  data-type="adsl">ADSL 2MB/1MB — 200.00 $</option>
+                  <option value="ADSL 5MB/2.5MB"  data-price="300"  data-dl="5000"   data-ul="2500"  data-type="adsl">ADSL 5MB/2.5MB — 300.00 $</option>
+                  <option value="ADSL 10MB/5MB"   data-price="400"  data-dl="10000"  data-ul="5000"  data-type="adsl">ADSL 10MB/5MB — 400.00 $</option>
+                </optgroup>
+                <optgroup label="── WIFI ──">
+                  <option value="WIFI 1MB/0.5MB"  data-price="100"  data-dl="1000"   data-ul="500"   data-type="wifi">WIFI 1MB/0.5MB — 100.00 $</option>
+                  <option value="WIFI 2MB/1MB"    data-price="200"  data-dl="2000"   data-ul="1000"  data-type="wifi">WIFI 2MB/1MB — 200.00 $</option>
+                  <option value="WIFI 5MB/2.5MB"  data-price="300"  data-dl="5000"   data-ul="2500"  data-type="wifi">WIFI 5MB/2.5MB — 300.00 $</option>
+                  <option value="WIFI 10MB/5MB"   data-price="400"  data-dl="10000"  data-ul="5000"  data-type="wifi">WIFI 10MB/5MB — 400.00 $</option>
+                </optgroup>
+                <optgroup label="── WDSL ──">
+                  <option value="WDSL 10 Mbps"    data-price="300"  data-dl="10000"  data-ul="10000" data-type="wdsl">WDSL 10 Mbps — 300.00 $</option>
+                  <option value="WDSL 20 Mbps"    data-price="400"  data-dl="20000"  data-ul="20000" data-type="wdsl">WDSL 20 Mbps — 400.00 $</option>
+                  <option value="WDSL 30 Mbps"    data-price="500"  data-dl="30000"  data-ul="30000" data-type="wdsl">WDSL 30 Mbps — 500.00 $</option>
+                  <option value="WDSL 40 Mbps"    data-price="600"  data-dl="40000"  data-ul="40000" data-type="wdsl">WDSL 40 Mbps — 600.00 $</option>
+                </optgroup>
+                <optgroup label="── FIBER ──">
+                  <option value="FIBER 10 Mbps"   data-price="300"  data-dl="10000"  data-ul="10000" data-type="fiber">FIBER 10 Mbps — 300.00 $</option>
+                  <option value="FIBER 50 Mbps"   data-price="650"  data-dl="50000"  data-ul="50000" data-type="fiber">FIBER 50 Mbps — 650.00 $</option>
+                  <option value="FIBER 100 Mbps"  data-price="750"  data-dl="100000" data-ul="100000" data-type="fiber" selected>FIBER 100 Mbps — 750.00 $</option>
+                </optgroup>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="assignPlan()" style="white-space:nowrap;padding:8px 18px">Assign Plan</button>
+            </div>
+          </div>
+
+          <!-- Auto-filled Plan Details -->
+          <div id="plan-info-box" style="background:#fff;border:1px solid #e0e7ff;border-radius:10px;padding:16px;margin-top:12px">
+            <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px">Plan Details Preview</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div style="background:#f0f9ff;border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:#0369a1;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Price / Month</div>
+                <div id="pi-price" style="font-size:22px;font-weight:800;color:#0c4a6e;margin-top:4px">750.00 $</div>
+              </div>
+              <div style="background:#f0fdf4;border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:#15803d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Download Speed</div>
+                <div id="pi-dl" style="font-size:22px;font-weight:800;color:#14532d;margin-top:4px">100 Mbps</div>
+              </div>
+              <div style="background:#fdf4ff;border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:#7e22ce;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Upload Speed</div>
+                <div id="pi-ul" style="font-size:22px;font-weight:800;color:#581c87;margin-top:4px">100 Mbps</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">Plan type:</span>
+                <span id="pi-type" style="font-size:12px;font-weight:700;color:#374151">FIBER</span>
+              </div>
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">Billing type:</span>
+                <span style="font-size:12px;font-weight:700;color:#374151">Recurring</span>
+              </div>
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">Start date:</span>
+                <input type="date" id="svc-start-date" value="2026-06-07" style="border:1px solid #d1d5db;border-radius:5px;padding:3px 8px;font-size:12px;font-family:inherit">
+              </div>
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">Service login:</span>
+                <input type="text" id="svc-login" value="000010" style="border:1px solid #d1d5db;border-radius:5px;padding:3px 8px;font-size:12px;font-family:inherit;width:100px">
+              </div>
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">IPv4 address:</span>
+                <input type="text" id="svc-ip" placeholder="Auto-assign" style="border:1px solid #d1d5db;border-radius:5px;padding:3px 8px;font-size:12px;font-family:inherit;width:120px">
+              </div>
+              <div class="form-row" style="border:none;padding:6px 0">
+                <span style="font-size:12px;color:#6b7280;width:130px;flex-shrink:0">Description:</span>
+                <input type="text" id="svc-desc" value="Internet - FIBER 100 Mbps" style="border:1px solid #d1d5db;border-radius:5px;padding:3px 8px;font-size:12px;font-family:inherit;flex:1">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CURRENT SERVICES TABLE ===== -->
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="panel-title" style="margin:0">Internet services</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:12px;color:#6b7280">View</span>
+              <select class="entries-select"><option>Active</option><option>All</option></select>
+              <button class="btn btn-primary btn-sm" onclick="openAssignForm()">Add service ▾</button>
+              <button class="btn btn-secondary btn-sm">🔄</button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:13px;color:#6b7280">Show</span>
+              <select class="entries-select"><option>100</option></select>
+              <span style="font-size:13px;color:#6b7280">entries</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <input class="search-box" placeholder="Search">
+              <button class="btn btn-secondary btn-sm">···</button>
+              <button class="btn btn-secondary btn-sm">→</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;width:100%">
+          <table style="min-width:900px;width:100%">
+            <thead><tr>
+              <th style="white-space:nowrap">ID ⇅</th>
+              <th style="white-space:nowrap">Status ⇅</th>
+              <th style="white-space:nowrap">Description ⇅</th>
+              <th style="white-space:nowrap">Plan ⇅</th>
+              <th style="white-space:nowrap">Price ⇅</th>
+              <th style="white-space:nowrap">Billing start ⇅</th>
+              <th style="white-space:nowrap">Billing end ⇅</th>
+              <th style="white-space:nowrap">Invoiced until ⇅</th>
+              <th style="white-space:nowrap">Service login ⇅</th>
+              <th style="white-space:nowrap">IPv4 ⇅</th>
+              <th style="white-space:nowrap">Rule ⇅</th>
+              <th style="white-space:nowrap">Actions ⇅</th>
+            </tr></thead>
+            <tbody id="services-tbody">
+              <tr id="svc-row-8">
+                <td>8</td>
+                <td><span class="badge badge-online">Online</span></td>
+                <td id="svc-row-desc" style="white-space:nowrap">Internet - FIBER 100 Mbps</td>
+                <td style="white-space:nowrap">
+                  <span class="link plan-fiber" id="svc-row-plan"
+                    onclick="openPlanDetail('FIBER 100 Mbps','fiber',750,100000,100000)"
+                    style="cursor:pointer">FIBER 100 Mbps</span>
+                </td>
+                <td id="svc-row-price" style="white-space:nowrap">750.00 $</td>
+                <td id="svc-row-start" style="white-space:nowrap">2026-05-01</td>
+                <td></td>
+                <td style="white-space:nowrap">2026-06-30</td>
+                <td id="svc-row-login" style="white-space:nowrap">000010</td>
+                <td id="svc-row-ip"></td>
+                <td><span class="badge badge-norule">No rule</span></td>
+                <td style="white-space:nowrap">
+                  <span style="cursor:pointer;margin-right:3px" title="Edit" onclick="onPlanSelect(document.getElementById('svc-plan-select').value)">✏️</span>
+                  <span style="cursor:pointer;margin-right:3px" title="Copy">📋</span>
+                  <span style="cursor:pointer;margin-right:3px" title="Refresh">🔄</span>
+                  <span style="cursor:pointer;margin-right:3px" title="Export">📤</span>
+                  <span style="cursor:pointer;margin-right:3px" title="Schedule">📅</span>
+                  <span style="cursor:pointer;margin-right:3px" title="Location">📍</span>
+                  <span style="cursor:pointer;color:#ef4444" title="Delete" onclick="removeService()">🗑️</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="pagination" style="margin-top:10px">
+            <span id="svc-count-label">Showing 1 to 1 of 1 entries</span>
+            <div class="pagination-btns">
+              <div class="page-btn">«</div><div class="page-btn">‹</div>
+              <div class="page-btn active">1</div>
+              <div class="page-btn">›</div><div class="page-btn">»</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:20px;font-size:12px;color:#9ca3af">Powered by <span style="color:#6366f1;font-weight:600">Splynx</span></div>
+        </div>
+      </div>
+
+      <!-- ===== BILLING TAB ===== -->
+      <div id="tab-billing" style="display:none">
+        <div class="billing-meta">
+          <div class="billing-meta-item"><div class="label">Account balance</div><div class="value">0.00 $</div></div>
+          <div class="billing-meta-item"><div class="label">MRR</div><div class="value">0.00 $</div></div>
+          <div class="billing-meta-item"><div class="label">Next block</div><div class="value"><span class="badge badge-online24" style="font-size:12px">In the next billing cycle</span></div></div>
+          <div class="billing-meta-item"><div class="label">Payment method</div><div class="value">Cash</div></div>
+        </div>
+        <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #e5e7eb">
+          <button class="btn btn-secondary btn-sm" style="border-radius:0;border-bottom:2px solid transparent;margin-bottom:-2px">Finance documents</button>
+          <button class="btn btn-secondary btn-sm" style="border-radius:0;border-bottom:2px solid transparent;margin-bottom:-2px">Transactions</button>
+          <button class="btn btn-primary btn-sm" style="border-radius:0;border-bottom:2px solid #6366f1;margin-bottom:-2px;background:#fff;color:#6366f1;border-color:transparent">Billing config</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+          <button class="btn btn-secondary btn-sm">Cancel last recurring invoice</button>
+          <button class="btn btn-primary btn-sm">Save</button>
+        </div>
+        <div class="two-col">
+          <!-- LEFT: Billing Settings + Proforma -->
+          <div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-title">Billing settings</div>
+              <div class="form-row"><div class="form-label" style="width:260px">Billing enabled</div><div class="form-control"><div class="toggle"></div></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Payment period</div><div class="form-control"><select><option>1 month</option><option>3 months</option><option>6 months</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Payment method</div><div class="form-control"><select><option>Cash</option><option>Bank transfer</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Billing day (automatic document date) ℹ️</div><div class="form-control"><select><option>1</option><option>5</option><option>10</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Payment due (days after document date) ℹ️</div><div class="form-control"><select><option>15</option><option>7</option><option>30</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Blocking period (days after payment due) ℹ️</div><div class="form-control"><select><option>Same as payment due date</option><option>1</option><option>5</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Deactivation period (days after blocking)</div><div class="form-control"><select><option>10</option><option>5</option><option>30</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Minimum balance ℹ️</div><div class="form-control"><input type="text" value="0.0000"></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Auto-create invoices ℹ️</div><div class="form-control"><div class="toggle"></div></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Send billing notifications</div><div class="form-control"><div class="toggle"></div></div></div>
+              <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="btn btn-secondary btn-sm">📅</button></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Proforma invoice settings</div>
+              <div class="form-row"><div class="form-label" style="width:260px">Enable auto proforma invoices</div><div class="form-control"><div class="toggle off"></div></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Day for generating auto proforma invoices</div><div class="form-control"><select><option>1</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:260px">Proforma payment period</div><div class="form-control"><select><option>1 month</option></select></div></div>
+            </div>
+          </div>
+          <!-- RIGHT: Future Actions + Billing Address + Reminders -->
+          <div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-title">Future actions previews</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:8px">
+                <span style="color:#6b7280">Next block ℹ️</span>
+                <span class="badge badge-online24">In the next billing cycle</span>
+              </div>
+              <div style="display:flex;justify-content:flex-end"><button class="btn btn-secondary btn-sm">📅</button></div>
+            </div>
+            <div class="panel" style="margin-bottom:16px">
+              <div class="panel-title">Billing address</div>
+              <div style="font-size:12px;color:#9ca3af;margin-bottom:10px">Customer address is used by default if no billing address is present</div>
+              <div class="form-row"><div class="form-label" style="width:130px">Billing name</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:130px">Billing street</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:130px">Billing ZIP code</div><div class="form-control"><input type="text"></div></div>
+              <div class="form-row"><div class="form-label" style="width:130px">Billing city</div><div class="form-control"><input type="text"></div></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">Reminders settings</div>
+              <div class="form-row"><div class="form-label" style="width:160px">Enable reminders</div><div class="form-control"><div class="toggle"></div></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Message type</div><div class="form-control"><select><option>Email</option><option>SMS</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Reminder #1 day ℹ️</div><div class="form-control"><select><option>2</option><option>1</option><option>3</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Reminder #2 day ℹ️</div><div class="form-control"><select><option>8</option><option>5</option><option>10</option></select></div></div>
+              <div class="form-row"><div class="form-label" style="width:160px">Reminder #3 day ℹ️</div><div class="form-control"><select><option>20</option><option>15</option><option>25</option></select></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STATISTICS TAB ===== -->
+      <div id="tab-statistics" style="display:none">
+        <!-- Internet / Voice sub-tabs -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn btn-primary btn-sm" style="border-radius:20px">Internet</button>
+          <button class="btn btn-secondary btn-sm" style="border-radius:20px">Voice</button>
+        </div>
+        <!-- Service / Period filters -->
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-bottom:16px;font-size:12.5px;color:#6b7280">
+          <span>Service:
+            <select class="entries-select" style="margin-left:6px"><option>All</option></select>
+          </span>
+          <span>Period:
+            <input type="text" style="border:1px solid #d1d5db;border-radius:5px;padding:4px 10px;font-size:12px;margin-left:6px;width:180px" value="2026-06-01 - 2026-06-30">
+          </span>
+          <button class="btn btn-secondary btn-sm">🔄</button>
+        </div>
+
+        <!-- Online Sessions -->
+        <div class="panel" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <span style="font-size:16px">🔄</span>
+            <div class="panel-title" style="margin:0">Online sessions</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Login</th><th>In</th><th>Out</th><th>Start at</th><th>Time</th><th>IP</th><th>MAC</th><th>NAS</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>000010</td>
+                <td>0.03 MB</td>
+                <td>0.02 MB</td>
+                <td>2026-06-07 09:20:01</td>
+                <td>00:30:34</td>
+                <td>0.0.0.0</td>
+                <td>---</td>
+                <td></td>
+                <td><span style="color:#6366f1;cursor:pointer;font-size:14px">↗</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Total for period + Graph -->
+        <div class="two-col" style="margin-bottom:16px">
+          <div class="panel">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <span>ℹ️</span><div class="panel-title" style="margin:0">Total for period</div>
+            </div>
+            <table class="usage-table">
+              <tr><td>Sessions</td><td style="font-weight:700;text-align:right">8</td></tr>
+              <tr><td>Errors</td><td style="font-weight:700;text-align:right">0</td></tr>
+              <tr><td>Time</td><td style="font-weight:700;text-align:right">01:09:59</td></tr>
+              <tr><td>Download</td><td style="font-weight:700;text-align:right">3 GB</td></tr>
+              <tr><td>Upload</td><td style="font-weight:700;text-align:right">3.07 GB</td></tr>
+            </table>
+          </div>
+          <div class="panel">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:8px"><span>📈</span><div class="panel-title" style="margin:0">Graph</div></div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6b7280">
+                Statistics type: <select class="entries-select"><option>Daily graph</option><option>Monthly graph</option></select>
+                <button class="btn btn-secondary btn-sm">🔄</button>
+              </div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:24px;text-align:center;font-size:13px;">
+              <div style="font-weight:700;color:#92400e;margin-bottom:6px">⚠️ Warning!</div>
+              <div style="color:#78716c">No graphs available</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usage by day chart -->
+        <div class="panel">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:8px"><span>ℹ️</span><div class="panel-title" style="margin:0">Usage by day</div></div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-secondary btn-sm">📊</button>
+              <button class="btn btn-secondary btn-sm">⊞</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-bottom:12px;font-size:11.5px;color:#6b7280">
+            <span><span style="display:inline-block;width:14px;height:10px;background:#fbbf24;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Download peak</span>
+            <span><span style="display:inline-block;width:14px;height:10px;background:#93c5fd;border-radius:2px;margin-right:4px;vertical-align:middle"></span>Upload peak</span>
+          </div>
+          <!-- Chart -->
+          <div style="position:relative;height:160px;border-left:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;display:flex;align-items:flex-end;padding:0 10px 0 40px;gap:10px;overflow:hidden">
+            <!-- Y labels -->
+            <div style="position:absolute;left:0;top:0;bottom:0;width:36px;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;color:#9ca3af;text-align:right;padding-right:4px">
+              <span>1.6 GB</span><span>1.4 GB</span><span>1.2 GB</span><span>1.0 GB</span><span>0.8 GB</span><span>0</span>
+            </div>
+            <!-- Bars for day 1 -->
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:0;flex:1;max-width:30px">
+              <div style="width:100%;height:0px;background:#fbbf24;border-radius:2px 2px 0 0"></div>
+              <div style="width:100%;height:120px;background:#93c5fd;border-radius:2px 2px 0 0"></div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:2px">Jun 1</div>
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;max-width:30px">
+              <div style="width:100%;height:60px;background:#fbbf24;border-radius:2px 2px 0 0"></div>
+              <div style="width:100%;height:0px;background:#93c5fd;border-radius:2px 2px 0 0"></div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:2px">Jun 2</div>
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;align-items:center;flex:1;max-width:30px">
+              <div style="width:100%;height:20px;background:#fbbf24;border-radius:2px 2px 0 0"></div>
+              <div style="width:100%;height:0px;background:#93c5fd;border-radius:2px 2px 0 0"></div>
+              <div style="font-size:9px;color:#9ca3af;margin-top:2px">Jun 3</div>
+            </div>
+            <!-- empty days -->
+            <div style="flex:1;max-width:30px"><div style="font-size:9px;color:#9ca3af;margin-top:140px">Jun 4</div></div>
+            <div style="flex:1;max-width:30px"><div style="font-size:9px;color:#9ca3af;margin-top:140px">Jun 5</div></div>
+            <div style="flex:1;max-width:30px"><div style="font-size:9px;color:#9ca3af;margin-top:140px">Jun 6</div></div>
+            <div style="flex:1;max-width:30px"><div style="font-size:9px;color:#9ca3af;margin-top:140px">Jun 7</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DOCUMENTS TAB ===== -->
+      <div id="tab-documents" style="display:none">
+        <div class="panel"><div class="no-data">No documents available.</div></div>
+      </div>
+
+      <!-- ===== LEAD TAB ===== -->
+      <div id="tab-lead" style="display:none">
+        <div class="panel"><div class="no-data">No lead data available for this customer.</div></div>
+      </div>
+
+      <!-- ===== COMMUNICATION TAB ===== -->
+      <div id="tab-communication" style="display:none">
+        <div class="panel"><div class="no-data">No communication records.</div></div>
+      </div>
+    </div>
+
+    <!-- ===== LEADS LIST ===== -->
+    <div class="view" id="view-leads-list">
+      <div class="page-header">
+        <div class="page-icon purple">🔷</div>
+        <div class="page-title"><div class="breadcrumb">Leads /</div><h1>List</h1></div>
+        <div class="topnav-actions">
+          <span style="font-size:12px;color:#6b7280">Lead condition</span>
+          <select class="entries-select"><option>Active leads</option></select>
+          <span style="font-size:12px;color:#6b7280">Quick access</span>
+          <select class="entries-select"><option>My leads</option></select>
+          <span style="font-size:12px;color:#6b7280">Pipeline</span>
+          <select class="entries-select"><option>All selected</option></select>
+          <button class="btn btn-primary btn-sm">Show</button>
+          <button class="btn btn-secondary btn-sm">⊞</button>
+          <button class="btn btn-secondary btn-sm">≡</button>
+          <button class="btn btn-secondary btn-sm">Filter</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:12px 16px" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <select class="entries-select"><option>100</option></select> entries
+          </div>
+          <input class="search-box" placeholder="Search">
+        </div>
+        <table>
+          <thead><tr><th><input type="checkbox"></th><th>Status ⇅</th><th>ID ⇅</th><th>Full name ⇅</th><th>Phone number ⇅</th><th>Email ⇅</th><th>Last contacted ⇅</th><th>Last comments ⇅</th><th>Date added ⇅</th><th>Custom status ⇅</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td><td><span class="badge badge-qualification">Qualification</span></td><td>26</td><td><span class="link">Prof. Bradford Rogahn</span></td><td>+3498923085335</td><td>jaquelin44@gmail.com</td><td>2026-06-07 00:14:03</td><td></td><td>2026-06-07</td><td>customer</td></tr>
+            <tr><td><input type="checkbox"></td><td><span class="badge badge-activation">Activation</span></td><td>28</td><td><span class="link">Tatyana Price</span></td><td>+1378989446965</td><td>skiles.travon@yahoo.com</td><td>2026-06-07 00:14:03</td><td></td><td>2026-06-07</td><td>customer</td></tr>
+            <tr><td><input type="checkbox"></td><td><span class="badge badge-lost">Lost</span></td><td>31</td><td><span class="link">Cara Oberbrunner</span></td><td>+7436328570688</td><td>shania.treutel@howe.net</td><td>2026-06-07 00:14:04</td><td></td><td>2026-06-07</td><td>customer</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" style="padding:12px 16px"><span>Showing 1 to 3 of 3 entries</span><div class="pagination-btns"><div class="page-btn active">1</div></div></div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-title">Totals</div>
+        <table>
+          <thead><tr><th>Status</th><th>Amount of leads</th><th>Sum of deals</th><th>Status</th><th>Amount of leads</th><th>Sum of deals</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge badge-new">New enquiry</span></td><td>0</td><td>0.00 $</td><td><span class="badge badge-qualification">Qualification</span></td><td>1</td><td>0.00 $</td></tr>
+            <tr><td><span class="badge badge-activation">Activation</span></td><td>1</td><td>0.00 $</td><td><span class="badge badge-online">Won</span></td><td>0</td><td>0.00 $</td></tr>
+            <tr><td><span class="badge badge-lost">Lost</span></td><td>1</td><td>0.00 $</td><td><span class="badge" style="background:#e5e7eb;color:#374151">Total</span></td><td>3</td><td>0.00 $</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== ADD LEAD ===== -->
+    <div class="view" id="view-add-lead">
+      <div class="page-header">
+        <div class="page-icon purple">🔷</div>
+        <div class="page-title"><h1>Add lead</h1></div>
+      </div>
+      <div class="panel" style="max-width:700px;margin:0 auto">
+        <div class="form-row"><div class="form-label">Full name</div><div class="form-control"><input type="text"></div></div>
+        <div class="form-row"><div class="form-label">Pipeline status</div><div class="form-control"><select><option>New enquiry</option><option>Qualification</option><option>Activation</option></select></div></div>
+        <div class="form-row"><div class="form-label">Owner</div><div class="form-control"><select><option>Me</option></select></div></div>
+        <div class="form-row"><div class="form-label">Phone number</div><div class="form-control"><input type="text"></div></div>
+        <div class="form-row"><div class="form-label">Email</div><div class="form-control"><input type="email"></div></div>
+        <div class="form-row"><div class="form-label">Source</div><div class="form-control"><select><option>Select the source or create a new one</option></select></div></div>
+        <div class="form-row"><div class="form-label">Partner</div><div class="form-control"><select><option>Demo company</option></select></div></div>
+        <div class="form-row"><div class="form-label">Location</div><div class="form-control"><select><option>Praha 5 - Barrandov</option></select></div></div>
+        <div class="form-row"><div class="form-label">City</div><div class="form-control"><input type="text"></div></div>
+        <div class="form-row"><div class="form-label">Street</div><div class="form-control"><input type="text"></div></div>
+        <div class="form-row"><div class="form-label">ZIP Code</div><div class="form-control"><input type="text"></div></div>
+        <div class="form-row"><div class="form-label">Geo data</div><div class="form-control"><input type="text" style="background:#f9fafb" readonly><span class="icon-btn">🗺️</span></div></div>
+        <div class="form-row"><div class="form-label">Score</div><div class="form-control"><input type="number" value="1"></div></div>
+        <div class="form-row"><div class="form-label">Billing type</div><div class="form-control"><select><option>Recurring</option></select></div></div>
+        <div class="form-row"><div class="form-label">Date added</div><div class="form-control"><input type="date" value="2026-06-07"></div></div>
+        <div class="form-row"><div class="form-label">Billing email</div><div class="form-control"><input type="email"></div></div>
+        <div class="form-row"><div class="form-label">State/Province</div><div class="form-control"><select><option></option></select></div></div>
+        <div style="text-align:right;margin-top:16px"><button class="btn btn-primary">Add</button></div>
+      </div>
+    </div>
+
+    <!-- ===== TICKETS ===== -->
+    <div class="view" id="view-tickets-list">
+      <div class="page-header">
+        <div class="page-icon blue">🔹</div>
+        <div class="page-title"><div class="breadcrumb">Tickets /</div><h1>List</h1></div>
+        <div class="topnav-actions">
+          <span style="font-size:12px;color:#6b7280">Quick access</span>
+          <select class="entries-select"><option>Assigned to me</option></select>
+          <span style="font-size:12px;color:#6b7280">Status</span>
+          <select class="entries-select"><option>All</option></select>
+          <button class="btn btn-secondary btn-sm">🔄</button>
+          <button class="btn btn-primary btn-sm">Create ticket</button>
+          <button class="btn btn-secondary btn-sm">⊞</button>
+          <button class="btn btn-secondary btn-sm">≡</button>
+          <button class="btn btn-secondary btn-sm">Filter</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:12px 16px" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <select class="entries-select"><option>100</option></select> entries
+          </div>
+          <input class="search-box" placeholder="Search">
+        </div>
+        <table>
+          <thead><tr><th><input type="checkbox"></th><th>ID ⇅</th><th>Subject ⇅</th><th>Customer / Lead ⇅</th><th>Priority ⇅</th><th>Status ⇅</th><th>Group ⇅</th><th>Type ⇅</th><th>Assigned to ⇅</th><th>Watching ⇅</th><th>Status ⇅</th><th>Actions ⇅</th></tr></thead>
+          <tbody><tr><td colspan="12" class="no-data">No data available in table</td></tr></tbody>
+        </table>
+        <div class="pagination" style="padding:12px 16px"><span>Showing 0 to 0 of 0 entries</span></div>
+      </div>
+    </div>
+
+    <!-- ===== FINANCE / INVOICES ===== -->
+    <div class="view" id="view-finance-list">
+      <div class="page-header">
+        <div class="page-icon blue">💬</div>
+        <div class="page-title"><div class="breadcrumb">Finance /</div><h1>Invoices</h1></div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:12px 16px" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <select class="entries-select"><option>100</option></select> entries
+          </div>
+          <input class="search-box" placeholder="Search">
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Customer</th><th>Date</th><th>Due date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody><tr><td colspan="7" class="no-data">No data available in table</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== INVENTORY ITEMS ===== -->
+    <div class="view" id="view-inventory-items">
+      <div class="page-header">
+        <div class="page-icon green">📦</div>
+        <div class="page-title"><div class="breadcrumb">Inventory /</div><h1>Items</h1></div>
+        <div class="topnav-actions">
+          <input class="filter-input" placeholder="Supplier invoice ID">
+          <input class="filter-input" placeholder="Barcode">
+          <span style="font-size:12px;color:#6b7280">Status</span>
+          <select class="entries-select"><option>Any</option></select>
+          <span style="font-size:12px;color:#6b7280">Product</span>
+          <select class="entries-select"><option>Any</option></select>
+          <span style="font-size:12px;color:#6b7280">Stock location</span>
+          <select class="entries-select"><option>All</option></select>
+          <button class="btn btn-secondary btn-sm">🔄</button>
+          <button class="btn btn-primary btn-sm">Add ▾</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:12px 16px" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <button class="btn btn-secondary btn-sm">Actions ▾</button>
+            <select class="entries-select"><option>100</option></select> entries
+          </div>
+          <input class="search-box" placeholder="Search">
+        </div>
+        <table>
+          <thead><tr><th><input type="checkbox"></th><th>ID ⇅</th><th>Product ⇅</th><th>Stock location ⇅</th><th>Supplier Invoice ID ⇅</th><th>Barcode ⇅</th><th>Status ⇅</th><th>Mark ⇅</th><th>Photo ⇅</th><th>Notes ⇅</th><th>Actions ⇅</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td><td>1</td><td><span class="link" onclick="navigate('inventory-product')">explicabo</span></td><td>Fisher Ltd</td><td><span class="link">1</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>2</td><td><span class="link">illo</span></td><td>Customer premises</td><td><span class="link">1</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>3</td><td><span class="link">est</span></td><td>Customer premises</td><td><span class="link">1</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>10</td><td><span class="link">est</span></td><td>Haley-Aufderhar</td><td><span class="link">3</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>11</td><td><span class="link">culpa</span></td><td>Fisher Ltd</td><td><span class="link">4</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>12</td><td><span class="link">deserunt</span></td><td>Customer premises</td><td><span class="link">4</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>13</td><td><span class="link">tempora</span></td><td>Fisher Ltd</td><td><span class="link">4</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+            <tr><td><input type="checkbox"></td><td>14</td><td><span class="link">minus</span></td><td>Renner, Lakin and Hand</td><td><span class="link">4</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" style="padding:12px 16px"><span>Showing 1 to 18 of 18 entries</span><div class="pagination-btns"><div class="page-btn">«</div><div class="page-btn">‹</div><div class="page-btn active">1</div><div class="page-btn">›</div><div class="page-btn">»</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===== INVENTORY PRODUCT DETAIL ===== -->
+    <div class="view" id="view-inventory-product">
+      <div class="page-header">
+        <div class="page-icon green">📦</div>
+        <div class="page-title"><div class="breadcrumb"><a onclick="navigate('inventory-items')">Inventory</a> / Products /</div><h1>explicabo</h1></div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="panel-title" style="margin:0">Product information</div>
+            <button class="btn btn-secondary btn-sm">✏️</button>
+          </div>
+          <div class="info-row"><span class="key">Name:</span><span class="val">explicabo</span></div>
+          <div class="info-row"><span class="key">Vendor:</span><span class="val">Kuphal LLC</span></div>
+          <div class="info-row"><span class="key">Category:</span><span class="val"></span></div>
+          <div class="info-row"><span class="key">Sell price:</span><span class="val">218.0000</span></div>
+          <div class="info-row"><span class="key">Rent price:</span><span class="val">10.0000</span></div>
+        </div>
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="panel-title" style="margin:0">Status information</div>
+            <button class="btn btn-secondary btn-sm">🔄</button>
+          </div>
+          <div class="info-row"><span class="key">In stock:</span><span class="val">1</span></div>
+          <div class="info-row"><span class="key">Internal usage:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">Rent:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">Sold:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">Returned:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">Assigned:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">Damaged:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">In transit:</span><span class="val">0</span></div>
+          <div class="info-row"><span class="key">In task:</span><span class="val">0</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="panel-title" style="margin:0">Items of product: explicabo</div>
+          <div style="display:flex;gap:8px">
+            <span style="font-size:12px;color:#6b7280">Status</span>
+            <select class="entries-select"><option>Any</option></select>
+            <span style="font-size:12px;color:#6b7280">Stock location</span>
+            <select class="entries-select"><option>All</option></select>
+            <button class="btn btn-secondary btn-sm">🔄</button>
+            <button class="btn btn-primary btn-sm">Add ▾</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th><input type="checkbox"></th><th>ID</th><th>Product</th><th>Stock location</th><th>Supplier Invoice ID</th><th>Barcode</th><th>Status</th><th>Mark</th><th>Photo</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td><td>1</td><td><span class="link">explicabo</span></td><td>Fisher Ltd</td><td><span class="link">1</span></td><td><span style="color:#dc2626">Please insert barcode</span></td><td><span class="badge badge-instock">In stock</span></td><td>New</td><td></td><td></td><td>···</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" style="margin-top:10px"><span>Showing 1 to 1 of 1 entries</span></div>
+        <div style="text-align:center;margin-top:20px;font-size:12px;color:#9ca3af">Powered by <span style="color:#6366f1;font-weight:600">Splynx</span></div>
+      </div>
+    </div>
+
+    <!-- ===== TARIFF PLANS ===== -->
+    <div class="view" id="view-tariff-plans">
+      <div class="page-header">
+        <div class="page-icon" style="background:#7c3aed">⊕</div>
+        <div class="page-title"><div class="breadcrumb">Tariffs plans /</div><h1>Internet</h1></div>
+        <div class="topnav-actions">
+          <span style="font-size:12px;color:#6b7280">Partner</span>
+          <select class="entries-select"><option>All</option></select>
+          <span style="font-size:12px;color:#6b7280">Visible</span>
+          <select class="entries-select"><option>Active</option></select>
+          <button class="btn btn-secondary btn-sm">🔄</button>
+          <button class="btn btn-primary btn-sm" onclick="openPlanDetail('New Plan','',0,0,0)">Add plan</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:12px 16px" class="table-toolbar">
+          <div class="table-toolbar-left">
+            <select class="entries-select"><option>100</option></select> entries
+          </div>
+          <input class="search-box" placeholder="Search">
+        </div>
+        <table>
+          <thead><tr><th>ID ⇅</th><th>Title ⇅</th><th>Price ⇅</th><th>Download speed (kbps) ⇅</th><th>Upload speed (kbps) ⇅</th><th>Customers ⇅</th><th>Customers online ⇅</th><th>Actions ⇅</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><span class="link plan-adsl" onclick="openPlanDetail('ADSL 1MB/0.5MB','adsl',100,1000,500)">ADSL 1MB/0.5MB</span></td><td>100.00 $</td><td>1000</td><td>500</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('ADSL 1MB/0.5MB','adsl',100,1000,500)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>2</td><td><span class="link plan-adsl" onclick="openPlanDetail('ADSL 2MB/1MB','adsl',200,2000,1000)">ADSL 2MB/1MB</span></td><td>200.00 $</td><td>2000</td><td>1000</td><td><span class="link">1</span></td><td><span class="link">1</span></td><td><span onclick="openPlanDetail('ADSL 2MB/1MB','adsl',200,2000,1000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>3</td><td><span class="link plan-adsl" onclick="openPlanDetail('ADSL 5MB/2.5MB','adsl',300,5000,2500)">ADSL 5MB/2.5MB</span></td><td>300.00 $</td><td>5000</td><td>2500</td><td><span class="link">1</span></td><td>0</td><td><span onclick="openPlanDetail('ADSL 5MB/2.5MB','adsl',300,5000,2500)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>4</td><td><span class="link plan-adsl" onclick="openPlanDetail('ADSL 10MB/5MB','adsl',400,10000,5000)">ADSL 10MB/5MB</span></td><td>400.00 $</td><td>10000</td><td>5000</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('ADSL 10MB/5MB','adsl',400,10000,5000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>5</td><td><span class="link plan-wifi" onclick="openPlanDetail('WIFI 1MB/0.5MB','wifi',100,1000,500)">WIFI 1MB/0.5MB</span></td><td>100.00 $</td><td>1000</td><td>500</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('WIFI 1MB/0.5MB','wifi',100,1000,500)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>6</td><td><span class="link plan-wifi" onclick="openPlanDetail('WIFI 2MB/1MB','wifi',200,2000,1000)">WIFI 2MB/1MB</span></td><td>200.00 $</td><td>2000</td><td>1000</td><td><span class="link">1</span></td><td><span class="link">1</span></td><td><span onclick="openPlanDetail('WIFI 2MB/1MB','wifi',200,2000,1000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>7</td><td><span class="link plan-wifi" onclick="openPlanDetail('WIFI 5MB/2.5MB','wifi',300,5000,2500)">WIFI 5MB/2.5MB</span></td><td>300.00 $</td><td>5000</td><td>2500</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('WIFI 5MB/2.5MB','wifi',300,5000,2500)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>8</td><td><span class="link plan-wifi" onclick="openPlanDetail('WIFI 10MB/5MB','wifi',400,10000,5000)">WIFI 10MB/5MB</span></td><td>400.00 $</td><td>10000</td><td>5000</td><td><span class="link">2</span></td><td><span class="link">1</span></td><td><span onclick="openPlanDetail('WIFI 10MB/5MB','wifi',400,10000,5000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>9</td><td><span class="link plan-wdsl" onclick="openPlanDetail('WDSL 10 Mbps','wdsl',300,10000,10000)">WDSL 10 Mbps</span></td><td>300.00 $</td><td>10000</td><td>10000</td><td><span class="link">1</span></td><td><span class="link">1</span></td><td><span onclick="openPlanDetail('WDSL 10 Mbps','wdsl',300,10000,10000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>10</td><td><span class="link plan-wdsl" onclick="openPlanDetail('WDSL 20 Mbps','wdsl',400,20000,20000)">WDSL 20 Mbps</span></td><td>400.00 $</td><td>20000</td><td>20000</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('WDSL 20 Mbps','wdsl',400,20000,20000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>11</td><td><span class="link plan-wdsl" onclick="openPlanDetail('WDSL 30 Mbps','wdsl',500,30000,30000)">WDSL 30 Mbps</span></td><td>500.00 $</td><td>30000</td><td>30000</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('WDSL 30 Mbps','wdsl',500,30000,30000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>12</td><td><span class="link plan-wdsl" onclick="openPlanDetail('WDSL 40 Mbps','wdsl',600,40000,40000)">WDSL 40 Mbps</span></td><td>600.00 $</td><td>40000</td><td>40000</td><td><span class="link">1</span></td><td>0</td><td><span onclick="openPlanDetail('WDSL 40 Mbps','wdsl',600,40000,40000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>13</td><td><span class="link plan-fiber" onclick="openPlanDetail('FIBER 10 Mbps','fiber',300,10000,10000)">FIBER 10 Mbps</span></td><td>300.00 $</td><td>10000</td><td>10000</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('FIBER 10 Mbps','fiber',300,10000,10000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>14</td><td><span class="link plan-fiber" onclick="openPlanDetail('FIBER 50 Mbps','fiber',650,50000,50000)">FIBER 50 Mbps</span></td><td>650.00 $</td><td>50000</td><td>50000</td><td>0</td><td>0</td><td><span onclick="openPlanDetail('FIBER 50 Mbps','fiber',650,50000,50000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+            <tr><td>15</td><td><span class="link plan-fiber" onclick="openPlanDetail('FIBER 100 Mbps','fiber',750,100000,100000)">FIBER 100 Mbps</span></td><td>750.00 $</td><td>100000</td><td>100000</td><td><span class="link">3</span></td><td><span class="link">1</span></td><td><span onclick="openPlanDetail('FIBER 100 Mbps','fiber',750,100000,100000)" style="cursor:pointer">✏️</span> 🔗 🔁 ···</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" style="padding:12px 16px"><span>Showing 1 to 15 of 15 entries</span><div class="pagination-btns"><div class="page-btn">«</div><div class="page-btn active">1</div><div class="page-btn">»</div></div></div>
+      </div>
+    </div>
+
+    <!-- ===== TARIFF PLAN DETAIL (General Settings) ===== -->
+    <div class="view" id="view-plan-detail">
+      <div class="page-header">
+        <div class="page-icon" style="background:#7c3aed">⊕</div>
+        <div class="page-title">
+          <div class="breadcrumb"><a onclick="navigate('tariff-plans')">Tariffs plans</a> / <a onclick="navigate('tariff-plans')">Internet</a> /</div>
+          <h1 id="plan-detail-title">ADSL 2MB/1MB</h1>
+        </div>
+        <div class="topnav-actions">
+          <button class="btn btn-secondary btn-sm" onclick="navigate('tariff-plans')">← Back</button>
+          <button class="btn btn-primary btn-sm" onclick="savePlan()">Save</button>
+        </div>
+      </div>
+
+      <div class="panel" style="max-width:860px">
+        <div class="panel-title">General settings</div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Title</div>
+          <div class="form-control"><input type="text" id="plan-title" value=""></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Enabled</div>
+          <div class="form-control" style="gap:10px">
+            <div class="toggle" id="plan-enabled-toggle" onclick="this.classList.toggle('off')"></div>
+            <span id="plan-enabled-badge" class="badge badge-active">Active</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Service description</div>
+          <div class="form-control"><input type="text" id="plan-desc" placeholder=""></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Price</div>
+          <div class="form-control">
+            <input type="number" id="plan-price" value="0" style="width:120px">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Partners</div>
+          <div class="form-control">
+            <select style="width:100%"><option>All selected</option><option>Demo company</option><option>Demo reseller</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">TAX included</div>
+          <div class="form-control">
+            <div class="toggle" onclick="this.classList.toggle('off')"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">TAX name</div>
+          <div class="form-control">
+            <select style="width:100%">
+              <option>21% (Tax 21%)</option>
+              <option>18% (Tax 18%)</option>
+              <option>12% (Tax 12%)</option>
+              <option>0% (No tax)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:#9ca3af;padding:4px 0 10px 220px">
+          If a location-based tax is applied, it will take preference and be used by default in the customer's financial documents.
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Download speed (kbps)</div>
+          <div class="form-control" style="gap:8px">
+            <input type="number" id="plan-dl" value="0" style="flex:1">
+            <span style="background:#e5e7eb;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600;color:#374151">kbps</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Upload speed (kbps)</div>
+          <div class="form-control" style="gap:8px">
+            <input type="number" id="plan-ul" value="0" style="flex:1">
+            <span style="background:#e5e7eb;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600;color:#374151">kbps</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Guaranteed speed</div>
+          <div class="form-control">
+            <select style="width:100%"><option>Relative</option><option>Absolute</option><option>None</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Guaranteed speed limit at</div>
+          <div class="form-control" style="gap:8px">
+            <input type="number" value="10" style="flex:1">
+            <span style="background:#e5e7eb;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600;color:#374151">%</span>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Priority</div>
+          <div class="form-control">
+            <select style="width:100%"><option>Normal</option><option>High</option><option>Low</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Aggregation</div>
+          <div class="form-control" style="gap:8px">
+            <span style="color:#6b7280;font-size:13px">1:</span>
+            <input type="number" value="1" style="width:80px">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Burst</div>
+          <div class="form-control">
+            <select style="width:100%"><option>None</option><option>Enabled</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Tariff plans available in customer portal for changing services ℹ️</div>
+          <div class="form-control">
+            <select style="width:100%"><option></option><option>ADSL plans</option><option>WIFI plans</option><option>FIBER plans</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Types of billing</div>
+          <div class="form-control">
+            <select style="width:100%"><option>All selected</option><option>Recurring</option><option>Prepaid (Custom)</option></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Prepaid period</div>
+          <div class="form-control">
+            <select style="width:100%"><option>Monthly</option><option>Weekly</option><option>Daily</option></select>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:#9ca3af;padding:4px 0 10px 220px">
+          This field can only be edited if "Types of billing" is set to "Prepaid (Custom)"
+        </div>
+
+        <div class="form-row">
+          <div class="form-label" style="width:220px">Exclude traffic classes from accounting</div>
+          <div class="form-control">
+            <select style="width:100%"><option></option></select>
+          </div>
+        </div>
+
+        <div style="text-align:right;margin-top:20px;display:flex;justify-content:flex-end;gap:10px">
+          <button class="btn btn-secondary" onclick="navigate('tariff-plans')">Cancel</button>
+          <button class="btn btn-primary" onclick="savePlan()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="page-header">
+        <div class="page-icon purple">⊞</div>
+        <div class="page-title"><h1>Dashboard</h1></div>
+      </div>
+      <div class="two-col">
+        <div class="panel"><div class="panel-title">Quick Stats</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            <div style="text-align:center"><div style="font-size:28px;font-weight:800;color:#6366f1">25</div><div style="font-size:12px;color:#9ca3af">Total Customers</div></div>
+            <div style="text-align:center"><div style="font-size:28px;font-weight:800;color:#059669">4</div><div style="font-size:12px;color:#9ca3af">Online Now</div></div>
+            <div style="text-align:center"><div style="font-size:28px;font-weight:800;color:#d97706">6</div><div style="font-size:12px;color:#9ca3af">Online 24h</div></div>
+            <div style="text-align:center"><div style="font-size:28px;font-weight:800;color:#2563eb">3</div><div style="font-size:12px;color:#9ca3af">Active Leads</div></div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-title">Active Tariff Plans</div>
+          <div class="info-row"><span class="key">ADSL Plans</span><span class="val plan-adsl">4</span></div>
+          <div class="info-row"><span class="key">WIFI Plans</span><span class="val plan-wifi">4</span></div>
+          <div class="info-row"><span class="key">WDSL Plans</span><span class="val plan-wdsl">4</span></div>
+          <div class="info-row"><span class="key">FIBER Plans</span><span class="val plan-fiber">3</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+  function navigate(view, tab) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const el = document.getElementById('view-' + view);
+    if (el) el.classList.add('active');
+
+    // If navigating to customer-detail, always reset to info tab (or specified tab)
+    if (view === 'customer-detail') {
+      showTab(tab || 'info');
+    }
+
+    // Update sidebar active state
+    document.querySelectorAll('.subnav .nav-item').forEach(n => n.classList.remove('active'));
+
+    // Show relevant sub-nav
+    if (['add-customer','customers-list','customer-detail'].includes(view)) {
+      document.getElementById('crm-sub').style.display = '';
+    }
+    if (['leads-list','add-lead'].includes(view)) {
+      document.getElementById('leads-sub').style.display = '';
+    }
+    if (view === 'tickets-list') document.getElementById('tickets-sub').style.display = '';
+    if (['inventory-items','inventory-product'].includes(view)) document.getElementById('inv-sub').style.display = '';
+    if (view === 'tariff-plans') document.getElementById('tariff-sub').style.display = '';
+  }
+
+  function toggleNav(el, subId) {
+    const sub = document.getElementById(subId);
+    if (!sub) return;
+    const isOpen = sub.style.display !== 'none';
+    sub.style.display = isOpen ? 'none' : '';
+    el.classList.toggle('expanded', !isOpen);
+  }
+
+  function showTab(name) {
+    const allTabs = ['info','services','billing','statistics','documents','lead','communication'];
+    allTabs.forEach(t => {
+      const el = document.getElementById('tab-' + t);
+      if (el) el.style.display = (t === name) ? '' : 'none';
+    });
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const names = ['info','services','billing','statistics','documents','lead','communication'];
+      t.classList.toggle('active', names[i] === name);
+    });
+  }
+
+  // Init: open crm-sub by default
+  document.getElementById('crm-sub').style.display = '';
+
+  // ===== SERVICES TAB LOGIC =====
+  function kbpsToLabel(kbps) {
+    if (kbps >= 1000) return (kbps / 1000) + ' Mbps';
+    return kbps + ' kbps';
+  }
+
+  function onPlanSelect(planName) {
+    const sel = document.getElementById('svc-plan-select');
+    const opt = sel.querySelector('option[value="' + planName + '"]');
+    if (!opt) return;
+    const price = opt.getAttribute('data-price');
+    const dl    = parseInt(opt.getAttribute('data-dl'));
+    const ul    = parseInt(opt.getAttribute('data-ul'));
+    const type  = opt.getAttribute('data-type').toUpperCase();
+
+    document.getElementById('pi-price').textContent = price + '.00 $';
+    document.getElementById('pi-dl').textContent    = kbpsToLabel(dl);
+    document.getElementById('pi-ul').textContent    = kbpsToLabel(ul);
+    document.getElementById('pi-type').textContent  = type;
+    document.getElementById('svc-desc').value       = 'Internet - ' + planName;
+
+    // set select to this plan
+    sel.value = planName;
+  }
+
+  function assignPlan() {
+    const sel   = document.getElementById('svc-plan-select');
+    const planName = sel.value;
+    const opt   = sel.querySelector('option[value="' + planName + '"]');
+    if (!opt) return;
+
+    const price = opt.getAttribute('data-price');
+    const type  = opt.getAttribute('data-type');
+    const startDate = document.getElementById('svc-start-date').value;
+    const login = document.getElementById('svc-login').value;
+    const ip    = document.getElementById('svc-ip').value;
+    const desc  = document.getElementById('svc-desc').value;
+
+    // Update table row
+    document.getElementById('svc-row-desc').textContent  = desc;
+    const planCell = document.getElementById('svc-row-plan');
+    planCell.textContent = planName;
+    planCell.className   = 'link plan-' + type;
+
+    document.getElementById('svc-row-price').textContent  = price + '.00 $';
+    document.getElementById('svc-row-start').textContent  = startDate;
+    document.getElementById('svc-row-login').textContent  = login;
+    document.getElementById('svc-row-ip').textContent     = ip;
+
+    // Update badge
+    document.getElementById('current-plan-badge').textContent = planName;
+
+    // Flash success
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;top:60px;right:24px;background:#059669;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.15)';
+    flash.innerHTML = '✓ Plan <strong>' + planName + '</strong> assigned successfully!';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 2800);
+  }
+
+  function removeService() {
+    if (!confirm('Remove this service?')) return;
+    const row = document.getElementById('svc-row-8');
+    if (row) row.style.display = 'none';
+    document.getElementById('svc-count-label').textContent = 'Showing 0 to 0 of 0 entries';
+    document.getElementById('current-plan-badge').textContent = 'None';
+  }
+
+  // Plan data map for pre-filling form
+  const planData = {
+    'ADSL 1MB/0.5MB':  {type:'adsl', price:100,  dl:1000,   ul:500},
+    'ADSL 2MB/1MB':    {type:'adsl', price:200,  dl:2000,   ul:1000},
+    'ADSL 5MB/2.5MB':  {type:'adsl', price:300,  dl:5000,   ul:2500},
+    'ADSL 10MB/5MB':   {type:'adsl', price:400,  dl:10000,  ul:5000},
+    'WIFI 1MB/0.5MB':  {type:'wifi', price:100,  dl:1000,   ul:500},
+    'WIFI 2MB/1MB':    {type:'wifi', price:200,  dl:2000,   ul:1000},
+    'WIFI 5MB/2.5MB':  {type:'wifi', price:300,  dl:5000,   ul:2500},
+    'WIFI 10MB/5MB':   {type:'wifi', price:400,  dl:10000,  ul:5000},
+    'WDSL 10 Mbps':    {type:'wdsl', price:300,  dl:10000,  ul:10000},
+    'WDSL 20 Mbps':    {type:'wdsl', price:400,  dl:20000,  ul:20000},
+    'WDSL 30 Mbps':    {type:'wdsl', price:500,  dl:30000,  ul:30000},
+    'WDSL 40 Mbps':    {type:'wdsl', price:600,  dl:40000,  ul:40000},
+    'FIBER 10 Mbps':   {type:'fiber',price:300,  dl:10000,  ul:10000},
+    'FIBER 50 Mbps':   {type:'fiber',price:650,  dl:50000,  ul:50000},
+    'FIBER 100 Mbps':  {type:'fiber',price:750,  dl:100000, ul:100000},
+  };
+
+  function openPlanDetail(name, type, price, dl, ul) {
+    // Fill form fields
+    document.getElementById('plan-detail-title').textContent = name;
+    document.getElementById('plan-title').value = name;
+    document.getElementById('plan-price').value = price;
+    document.getElementById('plan-dl').value = dl;
+    document.getElementById('plan-ul').value = ul;
+    document.getElementById('plan-desc').value = '';
+    // Reset toggle to enabled
+    const tog = document.getElementById('plan-enabled-toggle');
+    tog.classList.remove('off');
+    // Navigate to plan detail view
+    navigate('plan-detail');
+  }
+
+  function savePlan() {
+    const title = document.getElementById('plan-title').value;
+    const price = document.getElementById('plan-price').value;
+    const dl    = document.getElementById('plan-dl').value;
+    const ul    = document.getElementById('plan-ul').value;
+    // Update planData
+    planData[title] = {price: parseFloat(price), dl: parseInt(dl), ul: parseInt(ul)};
+    // Show success flash
+    const flash = document.createElement('div');
+    flash.style.cssText = 'position:fixed;top:60px;right:24px;background:#059669;color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.15)';
+    flash.textContent = '✓ Plan saved successfully!';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 2500);
+    navigate('tariff-plans');
+  }
+</script>
+</body>
+</html>
